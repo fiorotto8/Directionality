@@ -1,0 +1,7 @@
+.vscode/
+LongRun/
+Scans/
+Tracks/
+*.root
+*.png
+*.out
