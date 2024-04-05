@@ -266,7 +266,7 @@ int main(int argc, char** argv){
   out_tree->Branch("phi_HT_integral",&phi_HT_integral);
   */
 
-cout<<"this run has "<<tree->GetEntries()<<" entries"<<endl;
+  cout<<"this run has "<<tree->GetEntries()<<" entries"<<endl;
   for(int k=0;k<tree->GetEntries();k++)
   //for(int k=0;k<1;k++)
   {
@@ -304,7 +304,8 @@ cout<<"this run has "<<tree->GetEntries()<<" entries"<<endl;
       // Condition to filter out certain events based on physical properties
       //exclude 8keV
       int x0=55,ex0=500,xlen=350,exlen=10000;
-      if ( ((((recolength-x0)*(recolength-x0))/xlen)+(((scint/recolength-ex0)*(scint/recolength-ex0))/exlen)>1)      )
+      //if ( ((((recolength-x0)*(recolength-x0))/xlen)+(((scint/recolength-ex0)*(scint/recolength-ex0))/exlen)>1)      )
+      if(x_mean<1600 && x_mean>200 && scint<1000000 &&scint>1000 &&recolength>600 &&k!=14&&k!=27)
       {
         Analyzer Traccia(Form("Track%i_event%i_run%i",counter,k,run),XPix.data(),YPix.data(),ZPix.data(),BeginScPix[i],EndScPix[i]);
         //Traccia.SavePic(Form("Track%i_event%i_%i.png",counter,event,run));
@@ -319,14 +320,13 @@ cout<<"this run has "<<tree->GetEntries()<<" entries"<<endl;
         Traccia.ImprCorrectAngle();
         Traccia.BuildLineDirection();
 
-        if (k%10==0) Traccia.SavePicDir(Form("Track%i_event%i_run%i.png",counter,event,run));
+        Traccia.SavePicDir(Form("Track%i_event%i_run%i.png",counter,event,run));
 
         xIP=Traccia.GetXIP();
         yIP=Traccia.GetYIP();
         phi_PCA = Traccia.GetDir();
         phi_RMS = Traccia.AngleLineMaxRMS();
         xbar = Traccia.GetXbar(); ybar = Traccia.GetYbar();
-
 
         out_tree->Fill();
       }
