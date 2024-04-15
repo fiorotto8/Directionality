@@ -63,28 +63,22 @@ def extract_numbers(filename):
     else:
         return None, None
 def create_fill_TH2(name,x_name,y_name,z_name, x_vals, y_vals, weights=None, x_bins=20, y_bins=20,write=True):
+    # Convert x_bins and y_bins to integers explicitly
+    x_bins = int(x_bins)
+    y_bins = int(y_bins)
     hist = ROOT.TH2F(name, name, x_bins, 0.99*np.min(x_vals), 1.01*np.max(x_vals), y_bins, 0.99*np.min(y_vals), 1.01*np.max(y_vals))
     # Fill the histogram with the data
-    for x, y in zip(x_vals, y_vals):
-        hist.Fill(x, y)
+    if weights is None:
+        for x, y in zip(x_vals, y_vals):
+            hist.Fill(x, y)
+    else:
+        for x, y, weight in zip(x_vals, y_vals, weights):
+            hist.Fill(x, y, weight)
     # Set axis titles
     hist.GetXaxis().SetTitle(x_name)
     hist.GetYaxis().SetTitle(y_name)
     hist.GetZaxis().SetTitle(z_name)  # Set the z-axis title
     # Draw the histogram
-    hist.Draw("COLZ")  # Use the "COLZ" option to draw with a color palette
-    if write==True: hist.Write()
-    return hist
-    hist = ROOT.TH2F(name, name, x_bins, 0.99*np.min(x_vals), 1.01*np.max(x_vals), y_bins, 0.99*np.min(y_vals), 1.01*np.max(y_vals))
-    # Fill the histogram with the data
-    for x, y, weight in zip(x_vals, y_vals, weights):
-        hist.Fill(x, y, weight)
-    # Set axis titles
-    hist.GetXaxis().SetTitle(x_name)
-    hist.GetYaxis().SetTitle(y_name)
-    hist.GetZaxis().SetTitle(z_name)  # Set the z-axis title
-    # Draw the histogram
-    ROOT.gStyle.SetPalette(1)  # Set the palette. The number corresponds to a specific palette style.
     hist.Draw("COLZ")  # Use the "COLZ" option to draw with a color palette
     if write==True: hist.Write()
     return hist
