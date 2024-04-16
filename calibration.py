@@ -10,7 +10,7 @@ parser.add_argument("Cd_dataset", help="Input 109Cd reco dataset.")
 parser.add_argument("outfile",help="Name of the output root file")
 args = parser.parse_args()
 
-cuts_offset="(sc_rms>5) & (sc_tgausssigma>2.632) & (sc_width/sc_length>0.8) & (sc_integral<30000)& (sc_integral>1000)"
+cuts_offset="(sc_rms>5) & (sc_tgausssigma>2.632) & (sc_width/sc_length>0.8) & (sc_integral<100000)& (sc_integral>1000)"
 def get_var(var,file,cuts=None):
     try:
         events=uproot.open(file+":Events")
@@ -61,6 +61,33 @@ fileCd = args.Cd_dataset
 #main = ROOT.TFile("Ar80-20calib.root", "RECREATE")
 main = ROOT.TFile(args.outfile, "RECREATE")
 
+
+energy,adc,eadc=[5.9,8],[],[]
+gaussian=ROOT.TF1("gaussian", "gaus(0)",10000,40000)
+
+sc_int_Fe=get_var("sc_integral",fileFe)
+hFe = hist(sc_int_Fe,"sc_integral 55Fe",write=False,channels=500)
+#gaussian.SetParameters(70,3500,300,40,9000,400)
+hFe.Fit("gaussian","RQ")
+hFe.Write()
+adc.append(gaussian.GetParameter(1))
+eadc.append(gaussian.GetParError(1))
+
+gaussian=ROOT.TF1("gaussian", "gaus(0)",15000,35000)
+gausPol=ROOT.TF1("gausPol", "gaus(0)+pol1(3)",15000,35000)
+
+sc_int_Cd=get_var("sc_integral",fileCd)
+hCd = hist(sc_int_Cd,"sc_integral 109Cd",write=False,channels=200)
+hCd.Fit("gaussian","RQ")
+gausPol.SetParameters(gaussian.GetParameter(0),gaussian.GetParameter(1),gaussian.GetParameter(2),0,0)
+hCd.Fit("gausPol","RQ")
+hCd.Write()
+adc.append(gaussian.GetParameter(1))
+eadc.append(gaussian.GetParError(1))
+
+
+# if there are also the double peaks
+"""
 energy,adc,eadc=[5.9,5.9*2,8,8*2],[],[]
 #energy,adc,eadc=[5.9,5.9*2,8*2],[],[]
 
@@ -87,10 +114,14 @@ adc.append(gaussian.GetParameter(1))
 adc.append(gaussian.GetParameter(4))
 eadc.append(gaussian.GetParError(1))
 eadc.append(gaussian.GetParError(4))
+"""
 
 
 
-line=ROOT.TF1("line", "[0]+x*[1]",0,15000)
+
+
+#CALIBRATION CURVE
+line=ROOT.TF1("line", "[0]+x*[1]",0,50000)
 line.FixParameter(0,0)
 line.SetParameters(0,1.2E-3)
 

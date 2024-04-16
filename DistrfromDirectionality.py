@@ -51,6 +51,8 @@ def create_fill_TH2(name,x_name,y_name,z_name, x_vals, y_vals, weights=None, x_b
     hist.Draw("COLZ")  # Use the "COLZ" option to draw with a color palette
     if write==True: hist.Write()
     return hist
+def nparr(list):
+    return np.array(list,dtype="d")
 
 #import calibration
 #filecalib="LongRun/ArCF4_Mar24/Ar80-20calib.root"
@@ -86,7 +88,7 @@ df_cut=df[condition]
 
 adc,adc_error=df_cut["Integral"],1E-20*np.ones(len(df_cut["Integral"]))
 
-#I have 
+#I have
 # Calculate energy
 energy = offset + adc * slope
 # Propagate the error
@@ -99,6 +101,19 @@ df_cut['err_energy'] = energy_error
 #DF CUT CONTAINS everything with cuts
 #outfile="Finalmaybe_Ar8020.root"
 outfile=args.output_file
+#Angluar ditribution in degreees
+# Example array of angles in radians
+angles_radians = nparr(df_cut["AnglePCA"])
+# Convert radians to degrees
+angles_degrees = angles_radians * (180 / np.pi)
+angle_shifted=np.empty(len(angles_degrees))
+for i,angle in enumerate(angles_degrees):
+    if angle>0:
+        angle_shifted[i]=angle-180
+    else:
+        angle_shifted[i]=angle+180
+df_cut["AngleDegree"]=angle_shifted
+
 # Convert DataFrame to a dictionary for uproot
 data_to_write = df_cut.to_dict(orient='list')
 
@@ -111,6 +126,18 @@ hist(adc,"sc_integral")
 hist(energy,"Energy (keV)")
 create_fill_TH2("IP positions","X","Y","Entries",df_cut['X_ImpactPoint'],df_cut['Y_ImpactPoint'],x_bins=20,y_bins=20)
 #create_fill_TH2("MIN and MAX positions","X","Y","Entries",pd.concat([df_cut['Xmin'],df_cut['Xmax']]).tolist(),pd.concat([df_cut['Ymin'],df_cut['Ymax']]).tolist(),x_bins=20,y_bins=20)
+
+hist(nparr(df_cut["Integral"])/nparr(df_cut["ScSize"]),"delta (sc_int/sc_size)")
+
+angDistr=hist(angle_shifted,"Angular distribution (\circ)",write=False)
+# Define the combined fit function
+gaussian=ROOT.TF1("gaussian", "gaus(0)",-180,180)
+gausPol=ROOT.TF1("gausPol", "gaus(0)+pol0(3)",-180,180)
+angDistr.Fit("gaussian","RQ")
+gausPol.SetParameters(gaussian.GetParameter(0),gaussian.GetParameter(1),gaussian.GetParameter(2),0,0)
+fitResult = angDistr.Fit(gausPol, "S")
+angDistr.Write()
+
 
 
 ####DRAW LINES
@@ -133,12 +160,41 @@ for i, (x, y, angle) in enumerate(zip(df_cut['X_ImpactPoint'], df_cut['Y_ImpactP
     angle_radians = angle  # Assuming angle is already in radians
     slope = math.tan(angle_radians)
 
-    # Calculate Y at X=0 and X=3000
-    y_start = slope * (0 - x) + y
-    y_end = slope * (3000 - x) + y
+    # Initialize intersection points
+    intersection_points = []
+
+    # Check intersections with y = 0 and y = 2304, if they are within x-bounds
+    if slope != 0:
+        x_at_y0 = x - y / slope
+        if 0 <= x_at_y0 <= 3000:
+            intersection_points.append((x_at_y0, 0))
+
+        x_at_y2304 = x + (2304 - y) / slope
+        if 0 <= x_at_y2304 <= 3000:
+            intersection_points.append((x_at_y2304, 2304))
+
+    # Check intersections with x = 0 and x = 3000, if they are within y-bounds
+    y_at_x0 = slope * (0 - x) + y
+    if 0 <= y_at_x0 <= 2304:
+        intersection_points.append((0, y_at_x0))
+
+    y_at_x3000 = slope * (3000 - x) + y
+    if 0 <= y_at_x3000 <= 2304:
+        intersection_points.append((3000, y_at_x3000))
+
+    # Determine the best valid intersection points
+    if len(intersection_points) >= 2:
+        # Sort points by proximity to the original point (x, y)
+        intersection_points.sort(key=lambda p: math.hypot(p[0] - x, p[1] - y))
+        start_point = intersection_points[0]
+        end_point = intersection_points[-1]
+    else:
+        # Fallback to the original point if no valid intersections
+        start_point = (x, y)
+        end_point = (x, y)
 
     # Create and store the line and marker
-    lines[f'line{i}'] = ROOT.TLine(0, y_start, 3000, y_end)
+    lines[f'line{i}'] = ROOT.TLine(start_point[0], start_point[1], end_point[0], end_point[1])
     lines[f'line{i}'].Draw("same")
 
     markers[f'marker{i}'] = ROOT.TMarker(x, y, 20)
