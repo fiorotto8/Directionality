@@ -16,3 +16,4 @@
 - Run directionality Code on Sr only
 - Run `calibration.py` on the Fe and Cd reco dataset
 - Run `DistrfromDirectionality.py` on directionality data with the calibration parameters
+- Run `deconvolveDistr.py` with Geant4 anlayzed data and the measured directionalities to get the deconvolded intrisic angular resolution
