@@ -5,3 +5,5 @@ Tracks/
 *.root
 *.png
 *.out
+*gif
+distributions/

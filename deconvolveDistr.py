@@ -6,6 +6,7 @@ import uproot
 import ROOT
 from scipy.signal import wiener
 from tqdm import tqdm
+import os
 
 parser = argparse.ArgumentParser(description="Deconvolve f=g*h to get g.")
 parser.add_argument("intrinsic", help="root file from the Geant4 intrinsics spread")
@@ -56,6 +57,38 @@ def hist(data, x_name, channels=100, linecolor=4, linewidth=4,write=True, normal
     if write:
         hist.Write()
     return hist
+def hist_with_canvas(data, x_name, channels=200, linecolor=4, linewidth=4, write=True, normalize=False):
+    # Convert list directly to numpy array to avoid redundant loop
+    array = np.array(data, dtype="d")
+    # Create histogram
+    hist = ROOT.TH1D(x_name, x_name, channels, -180, 180)
+    # Use numpy vectorization to fill histogram
+    for x in array:
+        hist.Fill(x)
+    # Normalize if required
+    if normalize:
+        if hist.Integral() > 0:  # Check to avoid division by zero
+            hist.Scale(1.0 / hist.Integral())
+    # Set visual attributes and axis titles
+    hist.SetLineColor(linecolor)
+    hist.SetLineWidth(linewidth)
+    hist.GetXaxis().SetTitle(x_name)
+    hist.GetYaxis().SetTitle("Entries")
+    # Set maximum digits on axes to manage display
+    hist.GetYaxis().SetMaxDigits(3)
+    hist.GetXaxis().SetMaxDigits(3)
+    if write:
+        hist.Write()
+    
+    # Create canvas
+    canvas = ROOT.TCanvas(x_name, x_name, 1000, 1000)
+    # Draw histogram on canvas
+    hist.Draw()
+    # Update canvas
+    canvas.Update()
+    canvas.SaveAs(f"{x_name}.png")
+    # Return canvas
+    return canvas
 def richardson_lucy(histogram, psf, iterations):
     # histogram is the measured distribution f
     # psf is the point spread function (intrinsic distribution h)
@@ -237,6 +270,69 @@ def draw_on_canvas(graph, canvas_size=(1000, 1000), save_path=None):
         canvas.SaveAs(save_path)
 
     return canvas
+def GetStdErr(arr):
+    mean=np.mean(arr)
+    std=np.std(arr)
+    N=len(arr)
+    D4=np.sum(np.square(np.square(arr-mean)))/N
+    #print(D4)
+    return np.sqrt( (D4-std**4)/(N-1) )/(2*std)
+def propagate_error_std(s_meas, s_intr, sigma_meas, sigma_intr):
+    f = np.sqrt(s_meas**2 - s_intr**2)
+    if s_meas**2 <= s_intr**2:
+        raise ValueError("s_meas^2 should be larger than s_intr^2 to have a real result")
+
+    df_ds_meas = s_meas / f
+    df_ds_intr = -s_intr / f
+
+    sigma_f = np.sqrt((df_ds_meas**2 * sigma_meas**2) + (df_ds_intr**2 * sigma_intr**2))
+    return f, sigma_f
+def ensure_directory_exists(directory_path):
+    # Check if the directory exists
+    if not os.path.exists(directory_path):
+        # Create the directory, also creating any necessary intermediate directories
+        os.makedirs(directory_path, exist_ok=True)
+        #print(f"Directory '{directory_path}' was created.")
+def draw_multigraph_with_legend(name, graphs, graph_labels,y_title,x_title,out_dir="./"):
+    # Ensure each canvas has a unique name to avoid conflicts
+    canvas_name = name
+    canvas = ROOT.TCanvas(canvas_name, canvas_name, 1000, 1000)
+    canvas.SetLeftMargin(0.15)
+    canvas.SetRightMargin(0.05)
+    canvas.SetTopMargin(0.05)
+
+    multigraph = ROOT.TMultiGraph()
+    legend = ROOT.TLegend(0.7, 0.7, 0.95, 0.95)  # Adjust the position as needed
+
+    # Define colors and markers (add more if you have many graphs)
+    colors = [ROOT.kBlue+1, ROOT.kRed+1, ROOT.kOrange+7, ROOT.kSpring-1, ROOT.kPink+1, ROOT.kTeal-1]
+    markers = [20, 21, 22, 23, 29,33]
+
+    for i, (graph, label) in enumerate(zip(graphs, graph_labels)):
+        color = colors[i % len(colors)]
+        marker = markers[i % len(markers)]
+
+        graph.SetMarkerColor(color)
+        graph.SetLineColor(color)
+        graph.SetMarkerStyle(marker)
+        multigraph.Add(graph)
+
+        # Add entry to the legend
+        legend.AddEntry(graph, label, "lp")
+
+    multigraph.Draw("AP")
+    legend.Draw()  # Draw the legend
+
+    multigraph.GetXaxis().SetTitle(x_title)
+    multigraph.GetYaxis().SetTitle(y_title)
+    multigraph.SetTitle(name)
+
+    canvas.Draw()
+    canvas.Write()
+    ensure_directory_exists(out_dir)
+    canvas.SaveAs(out_dir+"/"+canvas_name+".png")
+    # Optional: return canvas and multigraph if you want to interact with them outside the function
+    return canvas, multigraph
 
 ############################ IMPORT DATA ############################
 filemeas=args.measured
@@ -320,19 +416,22 @@ if args.verbose is True:
 
 
 ##### SCAN IN ENERGY #####
+
+
 Emean=[5,12.5,17.5,25,35]
-Eerr=[2.5,1.25,1.25,2.5,2.5]
+Eerr=[5,2.5,2.5,5,5]
 Estarts=[0,10,15,20,30]
 Estops=[10,15,20,30,40]
 print(Estarts,Estops)
 
-"""
-Estarts=np.arange(0, 40, 10)
-Estops=np.arange(10, 50, 10)
-Emean=(Estops)-5
-Eerr=5*np.ones(len(Emean))
+""" 
+Estarts=np.arange(0, 40, 2.5)
+Estops=np.arange(2.5, 42.5, 2.5)
+Emean=(Estops)-1.25
+Eerr=1.25*np.ones(len(Emean))
 """
 angRes,errAngresPLUS,errAngresMINUS=np.empty(len(Emean)),np.empty(len(Emean)),np.empty(len(Emean))
+angRes_gaus,errAngres_gaus=np.empty(len(Emean)),np.empty(len(Emean))
 
 bin_edges = np.linspace(-100, 100, 51)  # 200 bins from -180 to 180
 for i,Estart in (enumerate(Estarts)):
@@ -349,6 +448,7 @@ for i,Estart in (enumerate(Estarts)):
     hist(angDeg_meas_filtered,f"Measured Angular distribution cuts=[{Estarts[i]},{Estops[i]}]",normalize=True,channels=50)
     hist(energy_meas_filtered,f"Measured Energy distribution cuts=[{Estarts[i]},{Estops[i]}]",normalize=True,channels=50)
     hist(angDeg_intr_filtered,f"Intrinsic Angular distribution cuts=[{Estarts[i]},{Estops[i]}]",normalize=True,linecolor=2,channels=50)
+    if args.verbose is True: hist_with_canvas(angDeg_intr_filtered,f"IntrinsicAngulardistributioncuts=[{Estarts[i]},{Estops[i]}]")
     hist(energy_intr_filtered,f"Intrinsic Energy distribution cuts=[{Estarts[i]},{Estops[i]}]",normalize=True,linecolor=2,channels=50)
 
     main.cd(f"Energy Scan cuts=[{Estarts[i]},{Estops[i]}]")
@@ -368,8 +468,12 @@ for i,Estart in (enumerate(Estarts)):
     errAngresMINUS[i]=std_confidence_interval[1]-std_dev_dec
     print(Emean[i],angRes[i],errAngresPLUS[i],errAngresMINUS[i])
 
+    s_meas,s_intr=np.std(angDeg_meas_filtered),np.std(angDeg_intr_filtered)
+    es_meas,es_intr=GetStdErr(angDeg_meas_filtered),GetStdErr(angDeg_intr_filtered)
+
+    angRes_gaus[i],errAngres_gaus[i]=propagate_error_std(s_meas,s_intr,es_meas,es_intr)
+
 main.cd()
-draw_on_canvas(grapherrAsym(Emean,angRes,Eerr,errAngresMINUS,errAngresPLUS,"e^{-} Energy (keV)","Angular resolution RMS (deg)",markersize=2),save_path=args.output_file.replace('.root', '.png'))
-
-
-
+graphs=[grapherrAsym(Emean,angRes,Eerr,errAngresMINUS,errAngresPLUS,"e^{-} Energy (keV)","Angular resolution RMS (deg)",markersize=2,color=2)
+        ,  grapherrAsym(Emean,angRes_gaus,Eerr,errAngres_gaus,errAngres_gaus,"e^{-} Energy (keV)","Angular resolution RMS (deg)",markersize=2)]
+draw_multigraph_with_legend("Angluar Resolution",graphs,["Deconvoluted","Supposed Gaussian"],"Angular Resolution RMS (deg)","e^{-} Energy (keV)")
