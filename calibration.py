@@ -63,7 +63,7 @@ main = ROOT.TFile(args.outfile, "RECREATE")
 
 
 energy,adc,eadc=[5.9,8],[],[]
-gaussian=ROOT.TF1("gaussian", "gaus(0)",10000,40000)
+gaussian=ROOT.TF1("gaussian", "gaus(0)",10000,20000)
 
 sc_int_Fe=get_var("sc_integral",fileFe)
 hFe = hist(sc_int_Fe,"sc_integral 55Fe",write=False,channels=500)

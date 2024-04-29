@@ -10,12 +10,16 @@ import sys
 import pandas as pd
 import os
 import multiprocessing as mp
+import argparse
 
 ROOT.gROOT.SetBatch(True)
 
 #cuts_offset="(sc_rms>5) & (sc_tgausssigma>2.632) & (sc_width/sc_length>0.8)"
 #cuts_offset="(sc_rms>5) & (sc_integral >15000) & (sc_integral <45000) & (sc_length<80) & (sc_tgausssigma>3)& (sc_tgausssigma<10)"
 
+parser = argparse.ArgumentParser(description="Split a ROOT TTree into multiple subsets.")
+parser.add_argument("input_file", help="root file with the directionality analyzed data")
+args = parser.parse_args()
 
 def get_var(var,file,cuts=None):
     try:
@@ -152,8 +156,8 @@ def plot_tgraph2d(x, y, z, title="3D Plot", x_title="X axis", y_title="Y axis", 
     return graph
 
 # Open the file using uproot, much faster for reading
-file = "LongRun/long60-40.root"
-main = ROOT.TFile("check_60-40.root", "RECREATE")
+file = args.input_file
+main = ROOT.TFile("checkCalib_temp.root", "RECREATE")
 
 ##################################for 8keV##################################
 main.mkdir("8keV")
@@ -179,7 +183,7 @@ hTemp = hist(variables["sc_width"]/variables["sc_length"], "sc_width/sc_length")
 main.mkdir("All")
 main.cd("All")
 #cuts_offset = f"((((sc_length-{x0})*(sc_length-{x0}))/{xlen})+(((sc_integral/sc_length)-{ex0})*((sc_integral/sc_length)-{ex0}))/{exlen})>1"
-cuts_offset ="(sc_rms>5)"
+cuts_offset ="(sc_rms>5) & (sc_integral<1000000)"
 variables = {"sc_integral": [], "sc_length": [], "sc_width":[],"sc_tgausssigma":[],"sc_rms":[] }
 for var in variables:
     values=get_var(var,file)
@@ -192,6 +196,23 @@ graph(variables["sc_length"],variables["sc_integral"]/variables["sc_length"],"le
 
 hTemp = hist(variables["sc_width"]/variables["sc_length"], "sc_width/sc_length")
 
+
+##################################for 22keV##################################
+main.mkdir("Custom")
+main.cd("Custom")
+#cuts_offset = f"((((sc_length-{x0})*(sc_length-{x0}))/{xlen})+(((sc_integral/sc_length)-{ex0})*((sc_integral/sc_length)-{ex0}))/{exlen})>1"
+cuts_offset ="(sc_rms>5) & (sc_integral<500000) & (sc_integral>5000) & (sc_width/sc_length<0.6)& (sc_width/sc_length>0.2)"
+variables = {"sc_integral": [], "sc_length": [], "sc_width":[],"sc_tgausssigma":[],"sc_rms":[] }
+for var in variables:
+    values=get_var(var,file)
+    variables[var]=values
+    #print(len(values))
+    hTemp = hist(values, f"60-40_{var}",channels=100)
+
+create_fill_TH2( f"60-40_dEdx","length","sc_int/length","Entries",variables["sc_length"],variables["sc_integral"]/variables["sc_length"], x_bins=100, y_bins=100)
+graph(variables["sc_length"],variables["sc_integral"]/variables["sc_length"],"length","sc_int/length")
+
+hTemp = hist(variables["sc_width"]/variables["sc_length"], "sc_width/sc_length")
 
 
 

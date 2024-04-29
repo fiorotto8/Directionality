@@ -13,12 +13,16 @@
 - Reconstruct data
   - Data with Sr
   - data with Fe/Cd
+
 - Run directionality Code on Sr only
-  - Usually get a 'AfterDir'
-  - It is better to run on Condor and use `splitROOT.py` to slit the input file (usually 'reco')
+  - Usually output a 'AfterDir'
+  - It is better to run on Condor and use `splitROOT.py` to split the input file (usually 'reco')
+
 - Run `calibration.py` on the Fe and Cd reco dataset
   - Usually output contain 'calib' in the name
+
 - Run `DistrfromDirectionality.py` on directionality data with the calibration parameters
   - Usually takes in input an 'AfterDir' file and output a 'anal' file
+
 - Run `deconvolveDistr.py` with Geant4 anlayzed data and the measured directionalities to get the deconvolded intrisic angular resolution
   - Usually contains 'deconvolved'
