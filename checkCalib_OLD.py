@@ -201,13 +201,13 @@ hTemp = hist(variables["sc_width"]/variables["sc_length"], "sc_width/sc_length")
 main.mkdir("Custom")
 main.cd("Custom")
 #cuts_offset = f"((((sc_length-{x0})*(sc_length-{x0}))/{xlen})+(((sc_integral/sc_length)-{ex0})*((sc_integral/sc_length)-{ex0}))/{exlen})>1"
-cuts_offset ="(sc_rms>5) & (sc_integral<500000) & (sc_integral>5000) & (sc_width/sc_length<0.6)& (sc_width/sc_length>0.2)"
+cuts_offset = "(sc_rms > 5) & (sc_integral > 1000) & (sc_length < 400) & (sqrt((sc_xmean - 2304/2)**2 + (sc_ymean - 2304/2)**2) < 600)"
 variables = {"sc_integral": [], "sc_length": [], "sc_width":[],"sc_tgausssigma":[],"sc_rms":[] }
 for var in variables:
     values=get_var(var,file)
     variables[var]=values
     #print(len(values))
-    hTemp = hist(values, f"60-40_{var}",channels=100)
+    hTemp = hist(values, f"60-40_{var}",channels=1000)
 
 create_fill_TH2( f"60-40_dEdx","length","sc_int/length","Entries",variables["sc_length"],variables["sc_integral"]/variables["sc_length"], x_bins=100, y_bins=100)
 graph(variables["sc_length"],variables["sc_integral"]/variables["sc_length"],"length","sc_int/length")

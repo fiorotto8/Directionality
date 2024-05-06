@@ -5,11 +5,14 @@ import pandas as pd
 from array import array
 import math
 import argparse
+import matplotlib.pyplot as plt
+from scipy.signal import find_peaks
 
 parser = argparse.ArgumentParser(description="Split a ROOT TTree into multiple subsets.")
 parser.add_argument("input_file", help="root file with the directionality analyzed data")
 parser.add_argument("calib_file", help="root file with the calibration parameters")
 parser.add_argument("output_file", help="Name of the output file")
+parser.add_argument('--intr_file', type=str, help='Path to the intrinsic distribution file, if passed it will align the energy distribution',default=None)
 args = parser.parse_args()
 
 def hist(data, x_name, channels=100, linecolor=4, linewidth=4,write=True):
@@ -82,7 +85,7 @@ with uproot.open(fileanal) as file:
     df = tree.arrays(library="pd")
 
 #cut on impact point
-condition = (df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1900) & (df['Y_ImpactPoint'] > 950) & (df['Y_ImpactPoint'] < 1300) & (df['Ymin'] >550)
+condition = (df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1800) & (df['Y_ImpactPoint'] > 1000) & (df['Y_ImpactPoint'] < 1300) & (df['Ymin'] >550)
 
 df_cut=df[condition]
 
@@ -94,13 +97,65 @@ energy = offset + adc * slope
 # Propagate the error
 energy_error = np.sqrt((offset_error)**2 + (adc * slope_error)**2 + (slope * adc_error)**2)
 
-# Adding new columns
-df_cut['energy'] = energy
-df_cut['err_energy'] = energy_error
-
 #DF CUT CONTAINS everything with cuts
-#outfile="Finalmaybe_Ar8020.root"
 outfile=args.output_file
+
+#Realign the energy distribution with the intrinsic one onl if the intrinsic distribution file is passed
+if args.intr_file is None:
+    # Adding new columns
+    df_cut['energy'] = energy
+    df_cut['err_energy'] = energy_error
+else:
+    fileintr=args.intr_file
+    # Open the ROOT file
+    with uproot.open(fileintr) as file:
+        # Access the TTree
+        intrTree = file["angles"]
+        angDeg_intr=intrTree["AngleDegree"].array(library="np")
+        energy_intr=1000*(intrTree["EDep"].array(library="np"))
+    #measured
+    energy_meas=energy
+
+    # Calculate histograms
+    hist_intr, bins_intr = np.histogram(energy_intr, bins=100, density=True)
+    hist_meas, bins_meas = np.histogram(energy_meas, bins=100, density=True)
+
+    # Find the peak positions
+    peak_intr=np.median(energy_intr)
+    peak_meas=np.median(energy_meas)
+
+    shift = peak_intr - peak_meas
+    #print(peak_intr,peak_meas,shift)
+
+    # Shift peak_meas
+    energy_meas_shift = energy_meas + shift
+
+    # Calculate new histogram for the shifted array2
+    hist_meas_shifted, bins_meas_shift = np.histogram(energy_meas_shift, bins=100, density=True)
+
+    # Plotting results
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 2, 1)
+    plt.bar(bins_intr[:-1], hist_intr, width=np.diff(bins_intr), alpha=0.5, label='Intrisic Distribution')
+    plt.bar(bins_meas[:-1], hist_meas, width=np.diff(bins_meas), alpha=0.5, label='Measured Distribution')
+    plt.legend()
+    plt.title('Before Shift')
+
+    plt.subplot(1, 2, 2)
+    plt.bar(bins_intr[:-1], hist_intr, width=np.diff(bins_intr), alpha=0.5, label='Intrisic Distribution')
+    plt.bar(bins_meas_shift[:-1], hist_meas_shifted, width=np.diff(bins_meas_shift), alpha=0.5, label='Measured Distribution Shifted')
+    plt.legend()
+    plt.title('After Shift')
+
+    plt.tight_layout()
+    plt.show()
+
+    # Adding new columns
+    df_cut['energy'] = energy_meas_shift
+    df_cut['err_energy'] = energy_error
+
+
+
 #Angluar ditribution in degreees
 # Example array of angles in radians
 angles_radians = nparr(df_cut["AnglePCA"])
@@ -113,6 +168,7 @@ for i,angle in enumerate(angles_degrees):
     else:
         angle_shifted[i]=angle+180
 df_cut["AngleDegree"]=angle_shifted
+
 
 # Convert DataFrame to a dictionary for uproot
 data_to_write = df_cut.to_dict(orient='list')

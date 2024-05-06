@@ -302,7 +302,7 @@ def draw_multigraph_with_legend(name, graphs, graph_labels,y_title,x_title,out_d
     canvas.SetTopMargin(0.05)
 
     multigraph = ROOT.TMultiGraph()
-    legend = ROOT.TLegend(0.7, 0.7, 0.95, 0.95)  # Adjust the position as needed
+    legend = ROOT.TLegend(0.65, 0.88, 0.95, 0.95)  # Adjust the position as needed
 
     # Define colors and markers (add more if you have many graphs)
     colors = [ROOT.kBlue+1, ROOT.kRed+1, ROOT.kOrange+7, ROOT.kSpring-1, ROOT.kPink+1, ROOT.kTeal-1]
@@ -410,21 +410,27 @@ if args.verbose is True:
     print("Mean confidence interval:", mean_confidence_interval)
     print("Standard deviation confidence interval:", std_confidence_interval)
 
-    print("DECONVOLVED",mean_dec, std_dev_dec)
-    print("THORETICHAL",theo_m,theo_s)
+    print("DECONVOLUTED",mean_dec, std_dev_dec)
+    print("THEORETICAL",theo_m,theo_s)
     print(f"Resolution @ 68% CL:",std_dev_dec,"-",std_dev_dec-std_confidence_interval[0],"+",std_dev_dec-std_confidence_interval[1])
 
 
 ##### SCAN IN ENERGY #####
 
-
+""" 
 Emean=[5,12.5,17.5,25,35]
 Eerr=[5,2.5,2.5,5,5]
 Estarts=[0,10,15,20,30]
 Estops=[10,15,20,30,40]
 print(Estarts,Estops)
+"""
+Emean=[5,15,25,40]
+Eerr=[5,5,5,10]
+Estarts=[0,10,20,30]
+Estops=[10,20,30,50]
+print("start stpo bins:",Estarts,Estops)
 
-""" 
+"""
 Estarts=np.arange(0, 40, 2.5)
 Estops=np.arange(2.5, 42.5, 2.5)
 Emean=(Estops)-1.25
@@ -462,11 +468,11 @@ for i,Estart in (enumerate(Estarts)):
     # Calculate confidence intervals
 
     std_confidence_interval = np.percentile(bootstrap_stds, [16, 84])
-    print(std_dev_dec,std_confidence_interval)
+    print("Resolution and CL interval",std_dev_dec,std_confidence_interval)
     angRes[i]=std_dev_dec
     errAngresPLUS[i]=std_dev_dec-std_confidence_interval[0]
     errAngresMINUS[i]=std_confidence_interval[1]-std_dev_dec
-    print(Emean[i],angRes[i],errAngresPLUS[i],errAngresMINUS[i])
+    print("Emean, resolution, cl interval",Emean[i],angRes[i],errAngresPLUS[i],errAngresMINUS[i])
 
     s_meas,s_intr=np.std(angDeg_meas_filtered),np.std(angDeg_intr_filtered)
     es_meas,es_intr=GetStdErr(angDeg_meas_filtered),GetStdErr(angDeg_intr_filtered)
