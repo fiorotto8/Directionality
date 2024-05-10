@@ -417,18 +417,18 @@ if args.verbose is True:
 
 ##### SCAN IN ENERGY #####
 
-""" 
-Emean=[5,12.5,17.5,25,35]
-Eerr=[5,2.5,2.5,5,5]
-Estarts=[0,10,15,20,30]
-Estops=[10,15,20,30,40]
+
+Emean=[12.5,17.5,25,35,50]
+Eerr=[2.5,2.5,5,5,10]
+Estarts=[10,15,20,30,40]
+Estops=[15,20,30,40,60]
 print(Estarts,Estops)
-"""
-Emean=[5,15,25,40]
+
+""" Emean=[5,15,25,40]
 Eerr=[5,5,5,10]
 Estarts=[0,10,20,30]
 Estops=[10,20,30,50]
-print("start stpo bins:",Estarts,Estops)
+"""
 
 """
 Estarts=np.arange(0, 40, 2.5)
@@ -436,6 +436,8 @@ Estops=np.arange(2.5, 42.5, 2.5)
 Emean=(Estops)-1.25
 Eerr=1.25*np.ones(len(Emean))
 """
+
+print("start stpo bins:",Estarts,Estops)
 angRes,errAngresPLUS,errAngresMINUS=np.empty(len(Emean)),np.empty(len(Emean)),np.empty(len(Emean))
 angRes_gaus,errAngres_gaus=np.empty(len(Emean)),np.empty(len(Emean))
 

@@ -63,7 +63,7 @@ main = ROOT.TFile(args.outfile, "RECREATE")
 
 
 energy,adc,eadc=[5.9,8],[],[]
-gaussian=ROOT.TF1("gaussian", "gaus(0)",10000,20000)
+gaussian=ROOT.TF1("gaussian", "gaus(0)",20000,40000)
 
 sc_int_Fe=get_var("sc_integral",fileFe)
 hFe = hist(sc_int_Fe,"sc_integral 55Fe",write=False,channels=500)
@@ -73,8 +73,8 @@ hFe.Write()
 adc.append(gaussian.GetParameter(1))
 eadc.append(gaussian.GetParError(1))
 
-gaussian=ROOT.TF1("gaussian", "gaus(0)",15000,35000)
-gausPol=ROOT.TF1("gausPol", "gaus(0)+pol1(3)",15000,35000)
+gaussian=ROOT.TF1("gaussian", "gaus(0)",30000,45000)
+gausPol=ROOT.TF1("gausPol", "gaus(0)+pol1(3)",30000,45000)
 
 sc_int_Cd=get_var("sc_integral",fileCd)
 hCd = hist(sc_int_Cd,"sc_integral 109Cd",write=False,channels=200)

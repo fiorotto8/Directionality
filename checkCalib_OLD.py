@@ -215,24 +215,6 @@ graph(variables["sc_length"],variables["sc_integral"]/variables["sc_length"],"le
 hTemp = hist(variables["sc_width"]/variables["sc_length"], "sc_width/sc_length")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 """
 OPTIMIZATION FOR 8KeV
 main.mkdir("optimization")

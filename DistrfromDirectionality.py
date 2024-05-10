@@ -85,9 +85,13 @@ with uproot.open(fileanal) as file:
     df = tree.arrays(library="pd")
 
 #cut on impact point
-condition = (df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1800) & (df['Y_ImpactPoint'] > 1000) & (df['Y_ImpactPoint'] < 1300) & (df['Ymin'] >550)
+condition = (df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1800) & (df['Y_ImpactPoint'] > 850) & (df['Y_ImpactPoint'] < 1450)
+df_cut_temp=df[condition]
 
+condition = (df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1800) & (df['Y_ImpactPoint'] > 850) & (df['Y_ImpactPoint'] < 1450) & (df['Ymin'] >500) & (df['Ymax'] <2304-500) & (df["Xmin"]>200)
 df_cut=df[condition]
+print("containment fraction after IP selection:", len(df_cut['X_ImpactPoint'])/len(df_cut_temp['X_ImpactPoint']))
+
 
 adc,adc_error=df_cut["Integral"],1E-20*np.ones(len(df_cut["Integral"]))
 
