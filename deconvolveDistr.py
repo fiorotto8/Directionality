@@ -485,3 +485,38 @@ main.cd()
 graphs=[grapherrAsym(Emean,angRes,Eerr,errAngresMINUS,errAngresPLUS,"e^{-} Energy (keV)","Angular resolution RMS (deg)",markersize=2,color=2)
         ,  grapherrAsym(Emean,angRes_gaus,Eerr,errAngres_gaus,errAngres_gaus,"e^{-} Energy (keV)","Angular resolution RMS (deg)",markersize=2)]
 draw_multigraph_with_legend("Angluar Resolution",graphs,["Deconvoluted","Supposed Gaussian"],"Angular Resolution RMS (deg)","e^{-} Energy (keV)")
+
+tree = ROOT.TTree('Resolutions', 'Resolutions')
+
+# Create placeholders for the branches
+energy = np.zeros(1, dtype=np.float32)
+e_energy = np.zeros(1, dtype=np.float32)
+ang_res = np.zeros(1, dtype=np.float32)
+err_ang_res_MINUS = np.zeros(1, dtype=np.float32)
+err_ang_res_PLUS = np.zeros(1, dtype=np.float32)
+ang_res_gaus = np.zeros(1, dtype=np.float32)
+err_ang_res_gaus = np.zeros(1, dtype=np.float32)
+
+# Create branches in the TTree
+tree.Branch('energy', energy, 'energy/F')
+tree.Branch('e_energy', e_energy, 'e_energy/F')
+tree.Branch('angRes', ang_res, 'angRes/F')
+tree.Branch('errAngresMINUS', err_ang_res_MINUS, 'errAngresMINUS/F')
+tree.Branch('errAngresPLUS', err_ang_res_PLUS, 'errAngresPLUS/F')
+tree.Branch('angRes_gaus', ang_res_gaus, 'angRes_gaus/F')
+tree.Branch('errAngres_gaus', err_ang_res_gaus, 'errAngres_gaus/F')
+
+# Fill the TTree with data from the NumPy arrays
+for i in range(len(Emean)):
+    energy[0] = Emean[i]
+    e_energy[0] = Eerr[i]
+    ang_res[0] = angRes[i]
+    err_ang_res_MINUS[0] = errAngresMINUS[i]
+    err_ang_res_PLUS[0] = errAngresPLUS[i]
+    ang_res_gaus[0] = angRes_gaus[i]
+    err_ang_res_gaus[0] = errAngres_gaus[i]
+    tree.Fill()
+
+# Write the TTree to the ROOT file and close the file
+tree.Write()
+main.Close()
