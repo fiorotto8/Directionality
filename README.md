@@ -26,3 +26,7 @@
 
 - Run `deconvolveDistr.py` with Geant4 anlayzed data and the measured directionalities to get the deconvolded intrisic angular resolution
   - Usually contains 'deconvolved'
+
+- Run `modulation_dactor.py` with deconvolved data and efficiency data
+  - Usually contains 'modulation'
+  - Usually contains efficiency
