@@ -94,9 +94,23 @@ def richardson_lucy(histogram, psf, iterations):
     # psf is the point spread function (intrinsic distribution h)
     # iterations is the number of iterations
     rl_estimate = np.copy(histogram)
+    epsilon = 1e-10  # A small constant to avoid division by zero
     for i in range(iterations):
-        relative_blur = histogram / np.convolve(rl_estimate, psf, mode='same')
-        rl_estimate *= np.convolve(relative_blur, psf[::-1], mode='same')
+        # Perform the convolution
+        convolution_result = np.convolve(rl_estimate, psf, mode='same')
+        # Handle zeros in the denominator by adding a small epsilon value
+        convolution_result_safe = np.where(convolution_result == 0, epsilon, convolution_result)
+        # Calculate the relative blur
+        relative_blur = histogram / convolution_result_safe
+        # Perform the convolution with the flipped PSF
+        correction_factor = np.convolve(relative_blur, psf[::-1], mode='same')
+        # Update the estimate
+        rl_estimate *= correction_factor
+        # Optional: Print the intermediate results for debugging
+        # print(f"Iteration {i+1}")
+        # print("Relative Blur:", relative_blur)
+        # print("Correction Factor:", correction_factor)
+        # print("RL Estimate:", rl_estimate)
     return rl_estimate
 def tikhonov_deconvolution(histogram, psf, regularization_param):
     F = fft(histogram)
@@ -197,6 +211,7 @@ def write_numpy_to_root(np_histogram, bin_edges, hist_name, linecolor=4, linewid
         # NumPy bin content is assumed to be the integral count in the bin,
         # so for ROOT, which expects the integral count, we use the value directly.
         hist.SetBinContent(i + 1, np_histogram[i])
+        hist.SetBinError(i,1E-20*np_histogram[i])
 
     # Set visual attributes and axis titles
     hist.SetLineColor(linecolor)
@@ -333,6 +348,46 @@ def draw_multigraph_with_legend(name, graphs, graph_labels,y_title,x_title,out_d
     canvas.SaveAs(out_dir+"/"+canvas_name+".png")
     # Optional: return canvas and multigraph if you want to interact with them outside the function
     return canvas, multigraph
+def th1_to_tgraph_errors(hist,xtitle):
+    """Convert a TH1 histogram to a TGraphErrors.
+    
+    Args:
+        hist (TH1): The input histogram.
+    
+    Returns:
+        TGraphErrors: The output graph with errors.
+    """
+    # Number of bins
+    n_bins = hist.GetNbinsX()
+    
+    # Arrays to hold the x and y values, and their errors
+    x_values = []
+    y_values = []
+    ex_values = []
+    ey_values = []
+
+    # Loop over the bins
+    for i in range(1, n_bins + 1):
+        x_values.append(hist.GetBinCenter(i))
+        y_values.append(hist.GetBinContent(i))
+        ex_values.append(hist.GetBinWidth(i) / 2.0)
+        ey_values.append(hist.GetBinError(i))
+
+    # Convert lists to arrays
+    x_array = np.array(x_values, dtype=np.float64)
+    y_array = np.array(y_values, dtype=np.float64)
+    ex_array = np.array(ex_values, dtype=np.float64)
+    ey_array = np.array(ey_values, dtype=np.float64)
+
+    # Create TGraphErrors
+    graph = ROOT.TGraphErrors(n_bins, x_array, y_array, ex_array, ey_array)
+    graph.SetName(hist.GetName())
+    graph.GetXaxis().SetTitle(xtitle)
+    graph.GetYaxis().SetTitle("Frequency")
+    graph.Write()
+    
+    return graph
+
 
 ############################ IMPORT DATA ############################
 filemeas=args.measured
@@ -362,13 +417,14 @@ energy_intr_filtered = energy_intr[intr_cut_indices]
 
  """
 main = ROOT.TFile(args.output_file, "RECREATE")
-main.mkdir("ImportedData")
-main.cd("ImportedData")
+#main.mkdir("ImportedData")
+#main.cd("ImportedData")
 
-hist(angDeg_meas,"Measured Angular distribution",normalize=True)
-hist(energy_meas,"Measured Energy distribution",normalize=True)
-hist(angDeg_intr,"Intrinsic Angular distribution",normalize=True,linecolor=2)
-hist(energy_intr,"Intrinsic Energy distribution",normalize=True,linecolor=2)
+meas_ang_distr=hist(angDeg_meas,"Measured Angular distribution",normalize=True)
+meas_en_distr=hist(energy_meas,"Measured Energy distribution",normalize=True)
+intr_ang_distr=hist(angDeg_intr,"Intrinsic Angular distribution",normalize=True,linecolor=2)
+intr_en_distr=hist(energy_intr,"Intrinsic Energy distribution",normalize=True,linecolor=2)
+th1_to_tgraph_errors(meas_ang_distr,"Angle(deg)"),th1_to_tgraph_errors(meas_en_distr,"Energy(keV)"),th1_to_tgraph_errors(intr_ang_distr,"Angle(deg)"),th1_to_tgraph_errors(intr_en_distr,"Energy(keV)")
 
 m_meas, m_intr=np.mean(angDeg_meas),np.mean(angDeg_intr)
 s_meas,s_intr=np.std(angDeg_meas),np.std(angDeg_intr)
@@ -390,8 +446,8 @@ bin_edges = np.linspace(-100, 100, 151)  # 200 bins from -180 to 180
 
 main.cd()
 mean_dec, std_dev_dec,hist_dec=deconvolution(angDeg_meas, angDeg_intr, bin_edges)
-write_numpy_to_root(hist_dec,bin_edges,"Deconvoluted Distribution")
-
+dec_distr=write_numpy_to_root(hist_dec,bin_edges,"Deconvolved Distribution")
+th1_to_tgraph_errors(dec_distr,"Angle(deg)")
 ########## BOOTSTRAP for Errors ############
 # Assuming the rest of your setup and bin_edges are defined as before
 num_bootstrap = 1000  # Number of bootstrap samples

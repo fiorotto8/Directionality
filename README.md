@@ -23,10 +23,16 @@
 
 - Run `DistrfromDirectionality.py` on directionality data with the calibration parameters
   - Usually takes in input an 'AfterDir' file and output a 'anal' file
+  - Typical Impact point selection: `(df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1800) & (df['Y_ImpactPoint'] > 850) & (df['Y_ImpactPoint'] < 1400)`
+  - Typical containment selection: `(df['Ymin'] >500) & (df['Ymax'] <2304-500) & (df["Xmin"]>500)`
 
-- Run `deconvolveDistr.py` with Geant4 anlayzed data and the measured directionalities to get the deconvolded intrisic angular resolution
+- Run `deconvolveDistr.py` with Geant4 anlayzed data and the measured directionalities to get the deconvoluted intrinsic angular resolution
+  - *Needs Geant4 90Sr simulation* <https://github.com/fiorotto8/MANGO_RadioactiveSource>
   - Usually contains 'deconvolved'
 
-- Run `modulation_dactor.py` with deconvolved data and efficiency data
+- Run `modulation_factor.py` with deconvolved data and efficiency data
+  - *Needs Geant4 gamma efficiency simulation* <https://github.com/fiorotto8/MANGOspaceG4>
   - Usually contains 'modulation'
   - Usually contains efficiency
+
+- the script `createPlot.sh` is running the `plot_multiGraph.py` multiple times to create 'nice' canvas of some interesting quantities cycling over all the measurements
