@@ -1,20 +1,10 @@
-# Directionality
-
-## To compile
-
-```g++ Analyzer.cxx Base_script.cxx -o nameprog `root-config --libs --cflags` -lSpectrum```
-
-## To run
-
-```./nameprog path_to_rootfile [output_directory]```
-
-### PIPELINE
+# Directionality pipeline to analyze data from INAF
 
 - Reconstruct data
   - Data with Sr
   - data with Fe/Cd
 
-- Run directionality Code on Sr only
+- Run directionality Code on Sr only <https://github.com/fiorotto8/CygnoAnal>
   - Usually output a 'AfterDir'
   - It is better to run on Condor and use `splitROOT.py` to split the input file (usually 'reco')
 

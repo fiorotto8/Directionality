@@ -15,6 +15,11 @@ parser.add_argument("--legend_pos", help="Position of the legend: top_right, top
 parser.add_argument("--v", help="enable verbose",action='store_true')
 args = parser.parse_args()
 
+colors = [ROOT.kRed, ROOT.kRed + 2,
+            ROOT.kBlue, ROOT.kBlue - 7, ROOT.kRed - 7, ROOT.kBlue + 2,
+            ROOT.kGreen, ROOT.kGreen + 3]
+marker_styles = [20, 21, 22, 23, 29, 33, 34,39,41,43,45,47]
+
 def find_root_files_with_subfolders(directory,file_name):
     root_files = []
     for dirpath, dirnames, filenames in os.walk(directory):
@@ -47,8 +52,8 @@ def draw_multigraph_with_legend(tgraphs, subfolders, title, legend_position):
         print("No TGraphs to plot.")
         return
     # Define a set of easily distinguishable colors and marker styles
-    colors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen, ROOT.kMagenta, ROOT.kCyan, ROOT.kOrange, ROOT.kBlack, ROOT.kViolet, ROOT.kPink, ROOT.kYellow]
-    marker_styles = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+    #colors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen, ROOT.kMagenta, ROOT.kCyan, ROOT.kOrange, ROOT.kBlack, ROOT.kViolet, ROOT.kPink, ROOT.kYellow]
+    #colors=[ROOT.kYellow+1,ROOT.kRed-10,ROOT.kOrange+6,ROOT.kRed,ROOT.kRed+2,ROOT.kMagenta,ROOT.kBlue,ROOT.kAzure+10,ROOT.kGreen+3,ROOT.kGray+1,ROOT.kBlack,ROOT.kMagenta+2,ROOT.kViolet]
 
     # Access the first TGraph to get axis titles
     first_tgraph = tgraphs[0]
@@ -104,8 +109,8 @@ def draw_multigraph_with_legend_hist(tgraphs, subfolders, title, legend_position
         return
 
     # Define a set of easily distinguishable colors and marker styles
-    colors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen, ROOT.kMagenta, ROOT.kCyan, ROOT.kOrange, ROOT.kBlack, ROOT.kViolet, ROOT.kPink, ROOT.kYellow]
-    marker_styles = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+    #colors = [ROOT.kRed, ROOT.kBlue, ROOT.kGreen, ROOT.kMagenta, ROOT.kCyan, ROOT.kOrange, ROOT.kBlack, ROOT.kViolet, ROOT.kPink, ROOT.kYellow]
+    #colors=[ROOT.kYellow+1,ROOT.kRed-10,ROOT.kOrange+6,ROOT.kRed,ROOT.kRed+2,ROOT.kMagenta,ROOT.kBlue,ROOT.kAzure+10,ROOT.kGreen+3,ROOT.kGray+1,ROOT.kBlack,ROOT.kMagenta+2,ROOT.kViolet]
 
     # Access the first TGraph to get axis titles
     first_tgraph = tgraphs[0]
