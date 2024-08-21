@@ -15,8 +15,8 @@ parser.add_argument("--legend_pos", help="Position of the legend: top_right, top
 parser.add_argument("--v", help="enable verbose",action='store_true')
 args = parser.parse_args()
 
-colors = [ROOT.kRed, ROOT.kRed + 2,
-            ROOT.kBlue, ROOT.kBlue - 7, ROOT.kRed - 7, ROOT.kBlue + 2,
+colors = [ ROOT.kBlue - 7,ROOT.kBlue,ROOT.kRed, ROOT.kRed + 2,
+            ROOT.kRed - 7, ROOT.kBlue + 2,
             ROOT.kGreen, ROOT.kGreen + 3]
 marker_styles = [20, 21, 22, 23, 29, 33, 34,39,41,43,45,47]
 

@@ -13,6 +13,7 @@ parser.add_argument("input_file", help="root file with the directionality analyz
 parser.add_argument("calib_file", help="root file with the calibration parameters")
 parser.add_argument("output_file", help="Name of the output file")
 parser.add_argument('--intr_file', type=str, help='Path to the intrinsic distribution file, if passed it will align the energy distribution',default=None)
+parser.add_argument("--sim",help="Flag for simulated datasets",action="store_true")
 args = parser.parse_args()
 
 def hist(data, x_name, channels=100, linecolor=4, linewidth=4,write=True):
@@ -85,13 +86,23 @@ with uproot.open(fileanal) as file:
     df = tree.arrays(library="pd")
 
 #cut on impact point
-condition = (df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1800) & (df['Y_ImpactPoint'] > 850) & (df['Y_ImpactPoint'] < 1400)
-df_cut_temp=df[condition]
+if args.sim:
+    condition = (df['X_ImpactPoint'] > 1000) & (df['X_ImpactPoint'] < 1300) & (df['Y_ImpactPoint'] >1380) & (df['Y_ImpactPoint'] < 1500)
+    df_cut_temp=df[condition]
 
-condition = (df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1800) & (df['Y_ImpactPoint'] > 850) & (df['Y_ImpactPoint'] < 1400) & (df['Ymin'] >500) & (df['Ymax'] <2304-500) & (df["Xmin"]>500)
-df_cut=df[condition]
+    condition = (df['X_ImpactPoint'] > 1000) & (df['X_ImpactPoint'] < 1300) & (df['Y_ImpactPoint'] > 1300) & (df['Y_ImpactPoint'] < 1500) & (df['Ymin'] >910+100) & (df["Xmin"]>885-100)& (df["Xmax"]<1430-100)
+    df_cut=df[condition]
+    
+    df_cut=df_cut_temp
+else:
+    condition = (df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1800) & (df['Y_ImpactPoint'] > 850) & (df['Y_ImpactPoint'] < 1400)
+    df_cut_temp=df[condition]
+
+    condition = (df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1800) & (df['Y_ImpactPoint'] > 850) & (df['Y_ImpactPoint'] < 1400) & (df['Ymin'] >500) & (df['Ymax'] <2304-500) & (df["Xmin"]>500)
+    df_cut=df[condition]
+
+print("Events before IP selection:", len(df['X_ImpactPoint']),"Events after IP selection:", len(df_cut_temp['X_ImpactPoint']),"Events afer containement",len(df_cut['X_ImpactPoint']))
 print("containment fraction after IP selection:", len(df_cut['X_ImpactPoint'])/len(df_cut_temp['X_ImpactPoint']))
-
 
 adc,adc_error=df_cut["Integral"],1E-20*np.ones(len(df_cut["Integral"]))
 

@@ -8,6 +8,7 @@ parser = argparse.ArgumentParser(description="Get calibration from Fe and Cd rec
 parser.add_argument("Fe_dataset", help="Input 55Fe reco dataset.")
 parser.add_argument("Cd_dataset", help="Input 109Cd reco dataset.")
 parser.add_argument("outfile",help="Name of the output root file")
+parser.add_argument("--sim",help="Flag for simulated datasets",action="store_true")
 args = parser.parse_args()
 
 cuts_offset="(sc_rms>5) & (sc_tgausssigma>2.632) & (sc_width/sc_length>0.8) & (sc_integral<100000)& (sc_integral>1000)"
@@ -83,8 +84,8 @@ gausPol.SetParameters(gaussian.GetParameter(0),gaussian.GetParameter(1),gaussian
 hCd.Fit("gausPol","RQ")
 hCd.Write()
 adc.append(gaussian.GetParameter(1))
-eadc.append(gaussian.GetParError(1))
-
+if args.sim: eadc.append(1000)
+else: eadc.append(gaussian.GetParError(1))
 
 # if there are also the double peaks
 """

@@ -387,7 +387,32 @@ def th1_to_tgraph_errors(hist,xtitle):
     graph.Write()
     
     return graph
+def hist_with_binedges(data, x_name, binedges, linecolor=4, linewidth=4, write=True, normalize=False):
+    import numpy as np
+    import ROOT
 
+    # Convert list directly to numpy array to avoid redundant loop
+    array = np.array(data, dtype="d")
+    # Create histogram with given bin edges
+    hist = ROOT.TH1D(x_name, x_name, len(binedges) - 1, np.array(binedges, dtype="d"))
+    # Use numpy vectorization to fill histogram
+    for x in array:
+        hist.Fill(x)
+    # Normalize if required
+    if normalize:
+        if hist.Integral() > 0:  # Check to avoid division by zero
+            hist.Scale(1.0 / hist.Integral())
+    # Set visual attributes and axis titles
+    hist.SetLineColor(linecolor)
+    hist.SetLineWidth(linewidth)
+    hist.GetXaxis().SetTitle(x_name)
+    hist.GetYaxis().SetTitle("Entries")
+    # Set maximum digits on axes to manage display
+    hist.GetYaxis().SetMaxDigits(3)
+    hist.GetXaxis().SetMaxDigits(3)
+    if write:
+        hist.Write()
+    return hist
 
 ############################ IMPORT DATA ############################
 filemeas=args.measured
@@ -405,7 +430,7 @@ with uproot.open(fileintr) as file:
     intrTree = file["angles"]
     angDeg_intr=intrTree["AngleDegree"].array(library="np")
     energy_intr=1000*(intrTree["EDep"].array(library="np"))
-""" 
+"""
 # Apply the cut with bitwise AND (&) and proper parentheses
 meas_cut_indices = (energy_meas > Estarts[i]) & (energy_meas < Estops[i])
 intr_cut_indices = (energy_intr > Estarts[i]) & (energy_intr < Estops[i])
@@ -414,21 +439,34 @@ angDeg_meas_filtered = angDeg_meas[meas_cut_indices]
 angDeg_intr_filtered = angDeg_intr[intr_cut_indices]
 energy_meas_filtered = energy_meas[meas_cut_indices]
 energy_intr_filtered = energy_intr[intr_cut_indices]
-
- """
+"""
 main = ROOT.TFile(args.output_file, "RECREATE")
 #main.mkdir("ImportedData")
 #main.cd("ImportedData")
-
+"""
 meas_ang_distr=hist(angDeg_meas,"Measured Angular distribution",normalize=True)
 meas_en_distr=hist(energy_meas,"Measured Energy distribution",normalize=True)
 intr_ang_distr=hist(angDeg_intr,"Intrinsic Angular distribution",normalize=True,linecolor=2)
 intr_en_distr=hist(energy_intr,"Intrinsic Energy distribution",normalize=True,linecolor=2)
+"""
+binedges_ang = np.linspace(-180, 180, 101)  # 101 points create 100 channels
+binedges_en = np.linspace(0, 150, 151)  # 101 points create 100 channels
+
+meas_ang_distr=hist_with_binedges(angDeg_meas,"Measured Angular distribution",binedges_ang,normalize=True)
+meas_en_distr=hist_with_binedges(energy_meas,"Measured Energy distribution",binedges_en,normalize=True)
+intr_ang_distr=hist_with_binedges(angDeg_intr,"Intrinsic Angular distribution",binedges_ang,normalize=True,linecolor=2)
+intr_en_distr=hist_with_binedges(energy_intr,"Intrinsic Energy distribution",binedges_en,normalize=True,linecolor=2)
+
 th1_to_tgraph_errors(meas_ang_distr,"Angle(deg)"),th1_to_tgraph_errors(meas_en_distr,"Energy(keV)"),th1_to_tgraph_errors(intr_ang_distr,"Angle(deg)"),th1_to_tgraph_errors(intr_en_distr,"Energy(keV)")
+#print(meas_ang_distr.Integral(),intr_ang_distr.Integral())
+#print(meas_en_distr.Integral(),intr_en_distr.Integral())
 
 m_meas, m_intr=np.mean(angDeg_meas),np.mean(angDeg_intr)
 s_meas,s_intr=np.std(angDeg_meas),np.std(angDeg_intr)
 theo_m,theo_s=m_meas+m_intr, np.sqrt(s_meas*s_meas-s_intr*s_intr)
+
+es_meas,es_intr=GetStdErr(angDeg_meas),GetStdErr(angDeg_intr)
+print("TOT meas res:",s_meas,"+/-",es_meas,"TOT intr res:",s_intr,"+/-",es_intr)
 
 # Generating some data for testing
 if args.test is True:
