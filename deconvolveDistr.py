@@ -480,7 +480,7 @@ if args.test is True:
 
 ### TRY TO DECONVOLVE f=g*h I need to get g, f is the measured h is the intrinsic
 # Define common bins
-bin_edges = np.linspace(-100, 100, 151)  # 200 bins from -180 to 180
+bin_edges = np.linspace(-100, 100, 151)  # 200 bins from -100 to 100
 
 main.cd()
 mean_dec, std_dev_dec,hist_dec=deconvolution(angDeg_meas, angDeg_intr, bin_edges)

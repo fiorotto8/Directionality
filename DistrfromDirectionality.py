@@ -87,13 +87,16 @@ with uproot.open(fileanal) as file:
 
 #cut on impact point
 if args.sim:
-    condition = (df['X_ImpactPoint'] > 1000) & (df['X_ImpactPoint'] < 1300) & (df['Y_ImpactPoint'] >1380) & (df['Y_ImpactPoint'] < 1500)
+    #! In simulation no cut is needed since it is done in preprocessing in the ConvertForDigi
+    condition = (df['X_ImpactPoint'] > 0) & (df["Integral"]>1000)
+    #condition = (df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1800) & (df['Y_ImpactPoint'] > 850) & (df['Y_ImpactPoint'] < 1400)
+    #condition = (df['X_ImpactPoint'] > 0) 
     df_cut_temp=df[condition]
 
-    condition = (df['X_ImpactPoint'] > 1000) & (df['X_ImpactPoint'] < 1300) & (df['Y_ImpactPoint'] > 1300) & (df['Y_ImpactPoint'] < 1500) & (df['Ymin'] >910+100) & (df["Xmin"]>885-100)& (df["Xmax"]<1430-100)
+    #condition = (df['X_ImpactPoint'] > 0)
+    #condition = (df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1800) & (df['Y_ImpactPoint'] > 850) & (df['Y_ImpactPoint'] < 1400) & (df['Ymin'] >500) & (df['Ymax'] <2304-500) & (df["Xmin"]>500)
+    #condition = (df['X_ImpactPoint'] > 1900) & (df['X_ImpactPoint'] < 2000) & (df['Y_ImpactPoint'] > 600) & (df['Y_ImpactPoint'] < 1600) & (df['Ymin'] >500) & (df['Ymax'] <2304-500) & (df["Xmin"]>500)
     df_cut=df[condition]
-    
-    df_cut=df_cut_temp
 else:
     condition = (df['X_ImpactPoint'] > 1700) & (df['X_ImpactPoint'] < 1800) & (df['Y_ImpactPoint'] > 850) & (df['Y_ImpactPoint'] < 1400)
     df_cut_temp=df[condition]

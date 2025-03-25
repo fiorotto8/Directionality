@@ -124,7 +124,7 @@ eadc.append(gaussian.GetParError(4))
 #CALIBRATION CURVE
 line=ROOT.TF1("line", "[0]+x*[1]",0,50000)
 line.FixParameter(0,0)
-line.SetParameters(0,1.2E-3)
+line.SetParameters(0,2E-4)
 
 calib=grapherr(adc,energy,eadc,[1E-10,1E-10,1E-10,1E-10],"sc_integral","Energy(keV)",write=False)
 calib.Fit("line","RQ")
